@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense - Spending Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-plus me-2"></i>Add New Expense
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="expenseForm">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">
+                            <i class="fas fa-dollar-sign me-1 text-muted"></i>Amount *
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="amount" 
+                                   name="amount" 
+                                   step="0.01" 
+                                   min="0.01" 
+                                   required 
+                                   placeholder="0.00"
+                                   autofocus>
+                        </div>
+                        <div class="invalid-feedback" id="amount-error"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="category" class="form-label">
+                            <i class="fas fa-tag me-1 text-muted"></i>Category *
+                        </label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">Choose a category...</option>
+                            {% for category in categories %}
+                                <option value="{{ category.name }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback" id="category-error"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-comment me-1 text-muted"></i>Description
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="description" 
+                               name="description" 
+                               placeholder="What did you spend on? (optional)"
+                               maxlength="200">
+                        <div class="form-text">Optional - Add details about this expense</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="date" class="form-label">
+                            <i class="fas fa-calendar me-1 text-muted"></i>Date *
+                        </label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="date" 
+                               name="date" 
+                               value="{{ today }}" 
+                               max="{{ today }}"
+                               required>
+                        <div class="invalid-feedback" id="date-error"></div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Add Expense
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Add Buttons -->
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-bolt me-1 text-warning"></i>Quick Add Common Expenses
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6 col-md-4">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 quick-add" 
+                                data-category="Food & Dining" data-description="Coffee">
+                            <i class="fas fa-coffee me-1"></i>Coffee
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 quick-add" 
+                                data-category="Food & Dining" data-description="Lunch">
+                            <i class="fas fa-hamburger me-1"></i>Lunch
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 quick-add" 
+                                data-category="Transportation" data-description="Gas">
+                            <i class="fas fa-gas-pump me-1"></i>Gas
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 quick-add" 
+                                data-category="Transportation" data-description="Parking">
+                            <i class="fas fa-parking me-1"></i>Parking
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 quick-add" 
+                                data-category="Shopping" data-description="Groceries">
+                            <i class="fas fa-shopping-cart me-1"></i>Groceries
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 quick-add" 
+                                data-category="Entertainment" data-description="Movie">
+                            <i class="fas fa-film me-1"></i>Movie
+                        </button>
+                    </div>
+                </div>
+                <div class="form-text mt-2">
+                    <i class="fas fa-info-circle me-1"></i>Click any button to auto-fill the category and description
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quick add functionality
+    const quickAddButtons = document.querySelectorAll('.quick-add');
+    const categorySelect = document.getElementById('category');
+    const descriptionInput = document.getElementById('description');
+    const amountInput = document.getElementById('amount');
+
+    quickAddButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+            const description = this.getAttribute('data-description');
+            
+            // Set category
+            categorySelect.value = category;
+            descriptionInput.value = description;
+            
+            // Focus on amount input
+            amountInput.focus();
+            
+            // Add visual feedback
+            this.classList.add('btn-primary');
+            this.classList.remove('btn-outline-primary');
+            
+            // Reset button appearance after a moment
+            setTimeout(() => {
+                this.classList.remove('btn-primary');
+                this.classList.add('btn-outline-primary');
+            }, 1000);
+        });
+    });
+
+    // Form validation
+    const form = document.getElementById('expenseForm');
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Reset previous validation states
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        
+        // Validate amount
+        const amount = parseFloat(amountInput.value);
+        if (!amount || amount <= 0) {
+            amountInput.classList.add('is-invalid');
+            document.getElementById('amount-error').textContent = 'Please enter a valid amount greater than 0';
+            isValid = false;
+        }
+        
+        // Validate category
+        if (!categorySelect.value) {
+            categorySelect.classList.add('is-invalid');
+            document.getElementById('category-error').textContent = 'Please select a category';
+            isValid = false;
+        }
+        
+        // Validate date
+        const dateInput = document.getElementById('date');
+        if (!dateInput.value) {
+            dateInput.classList.add('is-invalid');
+            document.getElementById('date-error').textContent = 'Please select a date';
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+
+    // Auto-focus and select amount input when page loads
+    amountInput.focus();
+    amountInput.select();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Spending Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h2 mb-0">
+            <i class="fas fa-chart-bar me-2 text-primary"></i>Analytics
+        </h1>
+        <p class="text-muted">Insights and trends for your spending patterns</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    {% if category_data %}
+        {% set total_spent = category_data | sum(attribute='total') %}
+        {% set avg_per_category = total_spent / category_data|length %}
+        {% set top_category = category_data[0] if category_data else None %}
+    {% else %}
+        {% set total_spent = 0 %}
+        {% set avg_per_category = 0 %}
+        {% set top_category = None %}
+    {% endif %}
+
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total This Month</h6>
+                        <h4>${{ "%.2f"|format(total_spent) }}</h4>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Avg per Category</h6>
+                        <h4>${{ "%.2f"|format(avg_per_category) }}</h4>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-pie fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Top Category</h6>
+                        <h6 class="mb-0">{{ top_category.category if top_category else 'None' }}</h6>
+                        <small>${{ "%.2f"|format(top_category.total) if top_category else '0.00' }}</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-crown fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Daily Average</h6>
+                        <h4>${{ "%.2f"|format(total_spent / 30) }}</h4>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-calendar-day fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row">
+    <!-- Monthly Trend Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2 text-primary"></i>Monthly Spending Trend
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if monthly_data %}
+                    <canvas id="monthlyChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No data available for monthly trends</h6>
+                        <p class="text-muted">Add some expenses to see your spending patterns over time.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Pie Chart -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>Category Breakdown
+                </h5>
+                <small class="text-muted">{{ current_month }}</small>
+            </div>
+            <div class="card-body">
+                {% if category_data %}
+                    <canvas id="categoryChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No spending data</h6>
+                        <p class="text-muted">Start adding expenses to see category breakdown.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Details and Daily Spending -->
+<div class="row">
+    <!-- Category Details Table -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2 text-primary"></i>Category Details
+                </h5>
+                <small class="text-muted">{{ current_month }}</small>
+            </div>
+            <div class="card-body p-0">
+                {% if category_data %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th class="text-center">Count</th>
+                                    <th class="text-end">Avg</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in category_data %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle me-2" 
+                                                 style="width: 12px; height: 12px; background-color: {{ loop.index0 < 6 and ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'][loop.index0] or '#C9CBCF' }}"></div>
+                                            {{ category.category }}
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ category.count }}</span>
+                                    </td>
+                                    <td class="text-end">${{ "%.2f"|format(category.avg_amount) }}</td>
+                                    <td class="text-end fw-bold">${{ "%.2f"|format(category.total) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-table fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No category data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Spending Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2 text-primary"></i>Daily Spending
+                </h5>
+                <small class="text-muted">{{ current_month }}</small>
+            </div>
+            <div class="card-body">
+                {% if daily_data %}
+                    <canvas id="dailyChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No daily data available</h6>
+                        <p class="text-muted">Add expenses throughout the month to see daily patterns.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('add_expense') }}" class="btn btn-primary me-2">
+            <i class="fas fa-plus me-1"></i>Add Expense
+        </a>
+        <a href="{{ url_for('expenses') }}" class="btn btn-outline-primary">
+            <i class="fas fa-list me-1"></i>View All Expenses
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Monthly Trend Chart
+    {% if monthly_data %}
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    const monthlyData = {{ monthly_data | list | tojson }};
+    
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: monthlyData.map(item => {
+                const date = new Date(item.month + '-01');
+                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            }),
+            datasets: [{
+                label: 'Monthly Spending',
+                data: monthlyData.map(item => item.total),
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Category Pie Chart
+    {% if category_data %}
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryData = {{ category_data | list | tojson }};
+    
+    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF'];
+    
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: categoryData.map(item => item.category),
+            datasets: [{
+                data: categoryData.map(item => item.total),
+                backgroundColor: colors.slice(0, categoryData.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Daily Spending Chart
+    {% if daily_data %}
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    const dailyData = {{ daily_data | list | tojson }};
+    
+    new Chart(dailyCtx, {
+        type: 'bar',
+        data: {
+            labels: dailyData.map(item => {
+                const date = new Date(item.date);
+                return date.getDate();
+            }),
+            datasets: [{
+                label: 'Daily Spending',
+                data: dailyData.map(item => item.total),
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Day of Month'
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
