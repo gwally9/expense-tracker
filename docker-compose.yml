@@ -1,0 +1,29 @@
+# docker-compose.yml (for local development with PostgreSQL)
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/spending_tracker
+      - SECRET_KEY=dev-secret-key
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+      - /app/__pycache__
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: spending_tracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
